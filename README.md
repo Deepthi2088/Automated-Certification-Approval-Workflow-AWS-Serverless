@@ -60,7 +60,7 @@ You will create 4 functions. For each function:
 1. Go to the **Step Functions** console.
 2. Click **Create state machine**.
 3. Select **Blank** template or **Write your workflow in code**.
-4. In the code editor, replace everything with the content of [step-functions-definition.json](step-functions-definition.json).
+4. In the code editor, replace everything with the content of .
 5. **CRITICAL**: You must update the placeholders in the JSON with your actual resource names/ARNs:
    - Replace `${DynamoDBTableName}` with `CertificationRequests` (appears twice).
    - Replace `${NotifyManagerFunctionName}` with `NotifyManagerFunction` (or the full ARN if cross-account, but function name works if in same account).
