@@ -4,25 +4,7 @@
 - An active AWS Account.
 - Access to the AWS Console.
 ## 1. System Architecture Overview 
-graph TD
-    Client[Client / Curl] -->|POST /request| APIGW[API Gateway]
-    Client -->|POST /approval| APIGW
-    Client -->|GET /request/:id| APIGW
-    
-    APIGW -->|POST /request| SubmitFn[SubmitRequestFunction]
-    APIGW -->|POST /approval| ApprovalFn[HandleApprovalFunction]
-    APIGW -->|GET /request/:id| StatusFn[CheckStatusFunction]
-    
-    SubmitFn -->|Start Execution| SFN[Step Functions Workflow]
-    
-    SFN -->|Put Item| DDB[(DynamoDB Table)]
-    SFN -->|Invoke | NotifyFn[NotifyManagerFunction]
-    NotifyFn -.->|Log Token| Logs[CloudWatch Logs]
-    
-    ApprovalFn -->|Send Task Success| SFN
-    SFN -->|Update Status| DDB
-    
-    StatusFn -->|Read Item| DDB
+
 
 
 ## Step 1: Create DynamoDB Table
