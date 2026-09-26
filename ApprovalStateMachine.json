@@ -1,0 +1,111 @@
+{
+  "Comment": "A simple AWS Step Functions state machine that waits for a callback (approval).",
+  "StartAt": "SaveRequest",
+  "States": {
+    "SaveRequest": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:putItem",
+      "Parameters": {
+        "TableName": "CertificationRequests",
+        "Item": {
+          "requestId": {
+            "S.$": "$.requestId"
+          },
+          "name": {
+            "S.$": "$.name"
+          },
+          "course": {
+            "S.$": "$.course"
+          },
+          "cost": {
+            "N.$": "States.Format('{}', $.cost)"
+          },
+          "status": {
+            "S": "PENDING"
+          },
+          "requestDate": {
+            "S.$": "$.requestDate"
+          }
+        }
+      },
+      "ResultPath": "$.ddbResult",
+      "Next": "WaitForApproval"
+    },
+    "WaitForApproval": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke.waitForTaskToken",
+      "Parameters": {
+        "FunctionName": "NotifyManagerFunction",
+        "Payload": {
+          "requestId.$": "$.requestId",
+          "name.$": "$.name",
+          "course.$": "$.course",
+          "cost.$": "$.cost",
+          "taskToken.$": "$$.Task.Token"
+        }
+      },
+      "ResultPath": "$.approvalResult",
+      "Next": "ProcessApproval"
+    },
+    "ProcessApproval": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.approvalResult.status",
+          "StringEquals": "APPROVED",
+          "Next": "MarkApproved"
+        },
+        {
+          "Variable": "$.approvalResult.status",
+          "StringEquals": "REJECTED",
+          "Next": "MarkRejected"
+        }
+      ],
+      "Default": "MarkRejected"
+    },
+    "MarkApproved": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Parameters": {
+        "TableName": "CertificationRequests",
+        "Key": {
+          "requestId": {
+            "S.$": "$.requestId"
+          }
+        },
+        "UpdateExpression": "SET #s = :status",
+        "ExpressionAttributeNames": {
+          "#s": "status"
+        },
+        "ExpressionAttributeValues": {
+          ":status": {
+            "S": "APPROVED"
+          }
+        }
+      },
+      "End": true
+    },
+    "MarkRejected": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Parameters": {
+        "TableName": "CertificationRequests",
+        "Key": {
+          "requestId": {
+            "S.$": "$.requestId"
+          }
+        },
+        "UpdateExpression": "SET #s = :status",
+        "ExpressionAttributeNames": {
+          "#s": "status"
+        },
+        "ExpressionAttributeValues": {
+          ":status": {
+            "S": "REJECTED"
+          }
+        }
+      },
+      "End": true
+    }
+  }
+}
